@@ -1,5 +1,6 @@
 package com.backend.app.model;
 
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -7,31 +8,42 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "viajes")
 public class Viaje {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank
+    @Column(nullable = false, length = 60)
     private String origen;      // Ej: "Lima"
 
     @NotBlank
+    @Column(nullable = false, length = 60)
     private String destino;     // Ej: "Chimbote"
 
     @NotNull
     @Future
+    @Column(name = "fecha_salida", nullable = false)
     private LocalDateTime fechaSalida;
 
     @NotNull
     @Future
+    @Column(name = "fecha_llegada", nullable = false)
     private LocalDateTime fechaLlegada;
 
     @Min(1)
+    @Column(nullable = false)
     private double precio;
 
     @Min(1)
+    @Column(name = "asientos_disponibles", nullable = false)
     private int asientosDisponibles;
 
     @NotBlank
+    @Column(nullable = false, length = 20)
     private String estado;      // PROGRAMADO, EN_RUTA, COMPLETADO, CANCELADO
 
     public Viaje() {

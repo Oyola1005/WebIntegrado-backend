@@ -1,87 +1,96 @@
 package com.backend.app.service;
 
 import com.backend.app.model.Viaje;
+import com.backend.app.repository.ViajeRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ViajeServiceImpl implements ViajeService {
 
-    private final Map<Long, Viaje> almacenamiento = new ConcurrentHashMap<>();
-    private final AtomicLong secuenciaId = new AtomicLong(0);
+    private final ViajeRepository viajeRepository;
 
-    public ViajeServiceImpl() {
-        // Datos de ejemplo: Lima -> Chimbote y Chimbote -> Lima
-        Viaje v1 = new Viaje(
-                secuenciaId.incrementAndGet(),
-                "Lima",
-                "Chimbote",
-                LocalDateTime.now().plusDays(1),
-                LocalDateTime.now().plusDays(1).plusHours(8),
-                80.0,
-                40,
-                "PROGRAMADO"
-        );
+    public ViajeServiceImpl(ViajeRepository viajeRepository) {
+        this.viajeRepository = viajeRepository;
+        inicializarDatosDeEjemplo();
+    }
 
-        Viaje v2 = new Viaje(
-                secuenciaId.incrementAndGet(),
-                "Chimbote",
-                "Lima",
-                LocalDateTime.now().plusDays(2),
-                LocalDateTime.now().plusDays(2).plusHours(8),
-                85.0,
-                38,
-                "PROGRAMADO"
-        );
+    // Carga de datos de ejemplo SOLO si la tabla está vacía
+    private void inicializarDatosDeEjemplo() {
+        if (viajeRepository.count() == 0) {
+            Viaje v1 = new Viaje(
+                    null,
+                    "Lima",
+                    "Chimbote",
+                    LocalDateTime.now().plusDays(1),
+                    LocalDateTime.now().plusDays(1).plusHours(8),
+                    80.0,
+                    40,
+                    "PROGRAMADO"
+            );
 
-        almacenamiento.put(v1.getId(), v1);
-        almacenamiento.put(v2.getId(), v2);
+            Viaje v2 = new Viaje(
+                    null,
+                    "Chimbote",
+                    "Lima",
+                    LocalDateTime.now().plusDays(2),
+                    LocalDateTime.now().plusDays(2).plusHours(8),
+                    85.0,
+                    38,
+                    "PROGRAMADO"
+            );
+
+            viajeRepository.save(v1);
+            viajeRepository.save(v2);
+        }
     }
 
     @Override
     public List<Viaje> listarTodos() {
-        return new ArrayList<>(almacenamiento.values());
+        return viajeRepository.findAll();
     }
 
     @Override
     public Optional<Viaje> buscarPorId(Long id) {
-        return Optional.ofNullable(almacenamiento.get(id));
+        return viajeRepository.findById(id);
     }
 
     @Override
+    @Transactional
     public Viaje crear(Viaje viaje) {
-        Long nuevoId = secuenciaId.incrementAndGet();
-        viaje.setId(nuevoId);
-        almacenamiento.put(nuevoId, viaje);
-        return viaje;
+        // id null → JPA genera el ID
+        return viajeRepository.save(viaje);
     }
 
     @Override
+    @Transactional
     public Viaje actualizar(Long id, Viaje viajeActualizado) {
-        Viaje existente = almacenamiento.get(id);
-        if (existente == null) {
-            return null;
-        }
-        viajeActualizado.setId(id);
-        almacenamiento.put(id, viajeActualizado);
-        return viajeActualizado;
+        return viajeRepository.findById(id)
+                .map(existente -> {
+                    existente.setOrigen(viajeActualizado.getOrigen());
+                    existente.setDestino(viajeActualizado.getDestino());
+                    existente.setFechaSalida(viajeActualizado.getFechaSalida());
+                    existente.setFechaLlegada(viajeActualizado.getFechaLlegada());
+                    existente.setPrecio(viajeActualizado.getPrecio());
+                    existente.setAsientosDisponibles(viajeActualizado.getAsientosDisponibles());
+                    existente.setEstado(viajeActualizado.getEstado());
+                    return viajeRepository.save(existente);
+                })
+                .orElse(null);
     }
 
     @Override
+    @Transactional
     public void eliminar(Long id) {
-        almacenamiento.remove(id);
+        viajeRepository.deleteById(id);
     }
 
     @Override
     public List<Viaje> buscarPorRuta(String origen, String destino) {
-        return almacenamiento.values().stream()
-                .filter(v -> v.getOrigen().equalsIgnoreCase(origen)
-                          && v.getDestino().equalsIgnoreCase(destino))
-                .collect(Collectors.toList());
+        return viajeRepository.buscarPorRuta(origen, destino);
     }
 }
