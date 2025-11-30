@@ -1,31 +1,47 @@
 package com.backend.app.model;
 
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+@Entity
+@Table(
+        name = "pasajeros",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_pasajero_dni", columnNames = "dni"),
+                @UniqueConstraint(name = "uk_pasajero_email", columnNames = "email")
+        }
+)
 public class Pasajero {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank
     @Size(min = 2, max = 60)
+    @Column(nullable = false, length = 60)
     private String nombres;
 
     @NotBlank
     @Size(min = 2, max = 60)
+    @Column(nullable = false, length = 60)
     private String apellidos;
 
     @NotBlank
     @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos")
+    @Column(nullable = false, length = 8)
     private String dni;
 
     @Email
     @NotBlank
+    @Column(nullable = false, length = 80)
     private String email;
 
     @Pattern(regexp = "\\d{9}", message = "El teléfono debe tener 9 dígitos")
+    @Column(length = 9)
     private String telefono;
 
     public Pasajero() {

@@ -1,59 +1,80 @@
 package com.backend.app.service;
 
 import com.backend.app.model.Pasajero;
+import com.backend.app.repository.PasajeroRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PasajeroServiceImpl implements PasajeroService {
 
-    private final Map<Long, Pasajero> almacenamiento = new ConcurrentHashMap<>();
-    private final AtomicLong secuenciaId = new AtomicLong(0);
+    private final PasajeroRepository pasajeroRepository;
 
-    public PasajeroServiceImpl() {
-        // Pasajeros de ejemplo
-        Pasajero p1 = new Pasajero(secuenciaId.incrementAndGet(),
-                "Juan", "Pérez", "12345678", "juan@example.com", "987654321");
-        Pasajero p2 = new Pasajero(secuenciaId.incrementAndGet(),
-                "María", "García", "87654321", "maria@example.com", "912345678");
+    public PasajeroServiceImpl(PasajeroRepository pasajeroRepository) {
+        this.pasajeroRepository = pasajeroRepository;
+        inicializarDatosEjemplo();
+    }
 
-        almacenamiento.put(p1.getId(), p1);
-        almacenamiento.put(p2.getId(), p2);
+    private void inicializarDatosEjemplo() {
+        if (pasajeroRepository.count() == 0) {
+            Pasajero p1 = new Pasajero(
+                    null,
+                    "Juan",
+                    "Pérez",
+                    "12345678",
+                    "juan@example.com",
+                    "987654321"
+            );
+            Pasajero p2 = new Pasajero(
+                    null,
+                    "María",
+                    "García",
+                    "87654321",
+                    "maria@example.com",
+                    "912345678"
+            );
+            pasajeroRepository.save(p1);
+            pasajeroRepository.save(p2);
+        }
     }
 
     @Override
     public List<Pasajero> listarTodos() {
-        return new ArrayList<>(almacenamiento.values());
+        return pasajeroRepository.findAll();
     }
 
     @Override
     public Optional<Pasajero> buscarPorId(Long id) {
-        return Optional.ofNullable(almacenamiento.get(id));
+        return pasajeroRepository.findById(id);
     }
 
     @Override
+    @Transactional
     public Pasajero crear(Pasajero pasajero) {
-        Long nuevoId = secuenciaId.incrementAndGet();
-        pasajero.setId(nuevoId);
-        almacenamiento.put(nuevoId, pasajero);
-        return pasajero;
+        return pasajeroRepository.save(pasajero);
     }
 
     @Override
+    @Transactional
     public Pasajero actualizar(Long id, Pasajero pasajero) {
-        if (!almacenamiento.containsKey(id)) {
-            return null;
-        }
-        pasajero.setId(id);
-        almacenamiento.put(id, pasajero);
-        return pasajero;
+        return pasajeroRepository.findById(id)
+                .map(existente -> {
+                    existente.setNombres(pasajero.getNombres());
+                    existente.setApellidos(pasajero.getApellidos());
+                    existente.setDni(pasajero.getDni());
+                    existente.setEmail(pasajero.getEmail());
+                    existente.setTelefono(pasajero.getTelefono());
+                    return pasajeroRepository.save(existente);
+                })
+                .orElse(null);
     }
 
     @Override
+    @Transactional
     public void eliminar(Long id) {
-        almacenamiento.remove(id);
+        pasajeroRepository.deleteById(id);
     }
 }

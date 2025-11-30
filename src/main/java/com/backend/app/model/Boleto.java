@@ -1,29 +1,38 @@
 package com.backend.app.model;
 
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "boletos")
 public class Boleto {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
+    @Column(name = "viaje_id", nullable = false)
     private Long viajeId;
 
     @NotNull
+    @Column(name = "pasajero_id", nullable = false)
     private Long pasajeroId;
 
     @NotNull
+    @Column(name = "fecha_compra", nullable = false)
     private LocalDateTime fechaCompra;
 
     @Min(0)
+    @Column(name = "monto_total", nullable = false)
     private double montoTotal;
 
-    // Ej: PAGADO, CANCELADO
     @NotNull
-    private String estado;
+    @Column(nullable = false, length = 20)
+    private String estado; // PAGADO, CANCELADO
 
     public Boleto() {
     }

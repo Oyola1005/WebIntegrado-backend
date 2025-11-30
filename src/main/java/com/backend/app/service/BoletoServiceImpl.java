@@ -2,38 +2,41 @@ package com.backend.app.service;
 
 import com.backend.app.model.Boleto;
 import com.backend.app.model.Viaje;
+import com.backend.app.repository.BoletoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BoletoServiceImpl implements BoletoService {
 
-    private final Map<Long, Boleto> almacenamiento = new ConcurrentHashMap<>();
-    private final AtomicLong secuenciaId = new AtomicLong(0);
-
+    private final BoletoRepository boletoRepository;
     private final ViajeService viajeService;
     private final PasajeroService pasajeroService;
 
-    public BoletoServiceImpl(ViajeService viajeService, PasajeroService pasajeroService) {
+    public BoletoServiceImpl(BoletoRepository boletoRepository,
+                             ViajeService viajeService,
+                             PasajeroService pasajeroService) {
+        this.boletoRepository = boletoRepository;
         this.viajeService = viajeService;
         this.pasajeroService = pasajeroService;
     }
 
     @Override
     public List<Boleto> listarTodos() {
-        return new ArrayList<>(almacenamiento.values());
+        return boletoRepository.findAll();
     }
 
     @Override
     public Optional<Boleto> buscarPorId(Long id) {
-        return Optional.ofNullable(almacenamiento.get(id));
+        return boletoRepository.findById(id);
     }
 
     @Override
+    @Transactional
     public Boleto comprarBoleto(Long viajeId, Long pasajeroId) {
 
         Viaje viaje = viajeService.buscarPorId(viajeId)
@@ -46,14 +49,13 @@ public class BoletoServiceImpl implements BoletoService {
             throw new IllegalStateException("No hay asientos disponibles para este viaje");
         }
 
-        // Descontar 1 asiento del viaje
+        // Descontamos asiento
         viaje.setAsientosDisponibles(viaje.getAsientosDisponibles() - 1);
         viajeService.actualizar(viaje.getId(), viaje);
 
-        // Crear boleto
-        Long nuevoId = secuenciaId.incrementAndGet();
+        // Creamos y guardamos boleto
         Boleto boleto = new Boleto(
-                nuevoId,
+                null,
                 viajeId,
                 pasajeroId,
                 LocalDateTime.now(),
@@ -61,12 +63,12 @@ public class BoletoServiceImpl implements BoletoService {
                 "PAGADO"
         );
 
-        almacenamiento.put(nuevoId, boleto);
-        return boleto;
+        return boletoRepository.save(boleto);
     }
 
     @Override
+    @Transactional
     public void eliminar(Long id) {
-        almacenamiento.remove(id);
+        boletoRepository.deleteById(id);
     }
 }

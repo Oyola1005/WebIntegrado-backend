@@ -4,6 +4,7 @@ import com.backend.app.dto.CompraBoletoRequest;
 import com.backend.app.model.Boleto;
 import com.backend.app.service.BoletoService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,11 +44,17 @@ public class BoletoController {
             );
             return ResponseEntity.ok(boleto);
         } catch (IllegalArgumentException | IllegalStateException e) {
+            // Errores de negocio → 400
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            // Otros errores (BD, etc.) → 500 con mensaje detallado
+            e.printStackTrace(); // se verá en la consola
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno: " + e.getMessage());
         }
     }
 
-    // Eliminar boleto (si fuera necesario)
+    // Eliminar boleto
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         boletoService.eliminar(id);
