@@ -1,25 +1,29 @@
 package com.backend.app.config;
 
+import com.backend.app.security.JwtAuthenticationFilter;
 import com.backend.app.service.UsuarioDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final UsuarioDetailsServiceImpl usuarioDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(UsuarioDetailsServiceImpl usuarioDetailsService) {
+    public SecurityConfig(UsuarioDetailsServiceImpl usuarioDetailsService,
+                          JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.usuarioDetailsService = usuarioDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
@@ -52,18 +56,18 @@ public class SecurityConfig {
                                 "/swagger-ui/**"
                         ).permitAll()
 
-                        // 🔓 Endpoints de autenticación (login, etc.) PÚBLICOS
+                        // Login y futuros /api/auth/** públicos
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // 🔐 Resto de la API protegido
+                        // Resto de /api/** protegido por JWT
                         .requestMatchers("/api/**").authenticated()
 
-                        // Otras rutas (si tienes alguna) por ahora libres
+                        // Lo demás, libre
                         .anyRequest().permitAll()
                 )
 
-                // Basic solo para los endpoints protegidos (mientras terminamos JWT)
-                .httpBasic(Customizer.withDefaults());
+                // 🔽 Aquí enchufamos el filtro JWT antes del filtro estándar de usuario/clave
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
