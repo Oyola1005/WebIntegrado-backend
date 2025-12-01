@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,40 +32,47 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-    System.out.println(">>> Intento de login con: " + request.getEmail());
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
 
-    Usuario usuario = usuarioRepository.findByEmail(request.getEmail().trim().toLowerCase())
-            .orElse(null);
+        System.out.println("\n>>> Intento de login con: " + request.getEmail());
 
-    if (usuario == null) {
-        System.out.println(">>> Usuario NO encontrado en la BD");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body("Usuario no encontrado");
+        Usuario usuario = usuarioRepository.findByEmail(
+                request.getEmail().trim().toLowerCase()
+        ).orElse(null);
+
+        // Si el usuario NO existe
+        if (usuario == null) {
+            System.out.println(">>> Usuario NO encontrado");
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", true, "message", "Credenciales incorrectas"));
+        }
+
+        boolean passwordMatch = passwordEncoder.matches(request.getPassword(), usuario.getPassword());
+
+        // Si la contraseña NO coincide
+        if (!passwordMatch) {
+            System.out.println(">>> Contraseña incorrecta");
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", true, "message", "Credenciales incorrectas"));
+        }
+
+        // Si todo es correcto -> generar token
+        var authority = new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name());
+
+        User userDetails = new User(
+                usuario.getEmail(),
+                usuario.getPassword(),
+                List.of(authority)
+        );
+
+        String token = jwtUtil.generateToken(userDetails);
+
+        System.out.println(">>> Login exitoso, token generado");
+
+        return ResponseEntity.ok(
+                new AuthResponse(token, usuario.getRol().name())
+        );
     }
-
-    System.out.println(">>> Usuario encontrado: " + usuario.getEmail());
-    System.out.println(">>> Password en BD: " + usuario.getPassword());
-
-    boolean passwordOk = passwordEncoder.matches(request.getPassword(), usuario.getPassword());
-    System.out.println(">>> ¿Password correcta? " + passwordOk);
-
-    if (!passwordOk) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body("Password incorrecta");
-    }
-
-    var authority = new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name());
-    User userDetails = new User(
-            usuario.getEmail(), 
-            usuario.getPassword(),
-            List.of(authority)
-    );
-
-    String token = jwtUtil.generateToken(userDetails);
-    AuthResponse response = new AuthResponse(token, usuario.getRol().name());
-
-    return ResponseEntity.ok(response);
-}
-
 }
