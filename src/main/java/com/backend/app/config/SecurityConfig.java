@@ -5,6 +5,7 @@ import com.backend.app.service.UsuarioDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -12,9 +13,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;   // 👈 IMPORTANTE
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final UsuarioDetailsServiceImpl usuarioDetailsService;
@@ -56,17 +59,21 @@ public class SecurityConfig {
                                 "/swagger-ui/**"
                         ).permitAll()
 
-                        // Login y futuros /api/auth/** públicos
+                        // Login público
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // Resto de /api/** protegido por JWT
+                        // Estado del backend público
+                        .requestMatchers("/api/viajes/status").permitAll()
+
+                        // 👇 Registro de pasajero SIN token (solo POST /api/pasajeros)
+                        .requestMatchers(HttpMethod.POST, "/api/pasajeros").permitAll()
+
+                        // 👇 TODO lo demás bajo /api/** requiere token
                         .requestMatchers("/api/**").authenticated()
 
-                        // Lo demás, libre
+                        // El resto libre
                         .anyRequest().permitAll()
                 )
-
-                // 🔽 Aquí enchufamos el filtro JWT antes del filtro estándar de usuario/clave
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
