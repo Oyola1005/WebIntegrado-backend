@@ -91,6 +91,8 @@ public class ViajeServiceImpl implements ViajeService {
 
     @Override
     public List<Viaje> buscarPorRuta(String origen, String destino) {
-        return viajeRepository.buscarPorRuta(origen, destino);
+        // Solo viajes FUTUROS, con asientos, PROGRAMADOS
+        LocalDateTime hoy = LocalDateTime.now();
+        return viajeRepository.buscarDisponiblesPorRuta(origen, destino, hoy);
     }
 }

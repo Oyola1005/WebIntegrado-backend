@@ -1,7 +1,7 @@
 package com.backend.app.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,12 +25,12 @@ public class Viaje {
     private String destino;     // Ej: "Chimbote"
 
     @NotNull
-    @Future
+    @FutureOrPresent
     @Column(name = "fecha_salida", nullable = false)
     private LocalDateTime fechaSalida;
 
     @NotNull
-    @Future
+    @FutureOrPresent
     @Column(name = "fecha_llegada", nullable = false)
     private LocalDateTime fechaLlegada;
 
@@ -38,7 +38,7 @@ public class Viaje {
     @Column(nullable = false)
     private double precio;
 
-    @Min(1)
+    @Min(0) // 👈 ahora puede llegar a 0 sin romper la validación
     @Column(name = "asientos_disponibles", nullable = false)
     private int asientosDisponibles;
 

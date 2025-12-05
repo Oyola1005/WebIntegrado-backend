@@ -40,7 +40,7 @@ public class BoletoServiceImpl implements BoletoService {
      * Compra de boleto transaccional:
      * - Verifica que exista el viaje
      * - Verifica que exista el pasajero
-     * - Verifica asientos disponibles y estado del viaje
+     * - Verifica fecha del viaje, asientos y estado
      * - Crea el boleto
      * - Descuenta 1 asiento del viaje
      * Si algo falla, se hace rollback automático.
@@ -59,19 +59,24 @@ public class BoletoServiceImpl implements BoletoService {
                 .orElseThrow(() ->
                         new IllegalArgumentException("No existe pasajero con id: " + pasajeroId));
 
-        // 3) Validar estado del viaje
+        // 3) Validar que el viaje NO haya ocurrido ya
+        if (viaje.getFechaSalida().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("No se puede comprar boleto: el viaje ya ocurrió.");
+        }
+
+        // 4) Validar estado del viaje
         if (!"PROGRAMADO".equalsIgnoreCase(viaje.getEstado())) {
             throw new IllegalStateException(
                     "El viaje no está disponible para compra. Estado actual: " + viaje.getEstado()
             );
         }
 
-        // 4) Validar asientos disponibles
+        // 5) Validar asientos disponibles
         if (viaje.getAsientosDisponibles() <= 0) {
             throw new IllegalStateException("No hay asientos disponibles para este viaje");
         }
 
-        // 5) Crear boleto
+        // 6) Crear boleto
         Boleto boleto = new Boleto(
                 null,
                 viajeId,
@@ -81,7 +86,7 @@ public class BoletoServiceImpl implements BoletoService {
                 "PAGADO"
         );
 
-        // 6) Actualizar asientos del viaje
+        // 7) Actualizar asientos del viaje
         int nuevosAsientos = viaje.getAsientosDisponibles() - 1;
         viaje.setAsientosDisponibles(nuevosAsientos);
 
@@ -92,7 +97,7 @@ public class BoletoServiceImpl implements BoletoService {
 
         viajeRepository.save(viaje);
 
-        // 7) Guardar boleto
+        // 8) Guardar boleto
         return boletoRepository.save(boleto);
     }
 
