@@ -13,5 +13,7 @@ public interface BoletoService {
 
     Boleto comprarBoleto(Long viajeId, Long pasajeroId);
 
+    Boleto comprarBoletoParaUsuarioActual(Long viajeId, String emailUsuario); // 👈 NUEVO
+
     void eliminar(Long id);
 }

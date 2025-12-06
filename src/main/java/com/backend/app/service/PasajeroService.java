@@ -11,6 +11,8 @@ public interface PasajeroService {
 
     Optional<Pasajero> buscarPorId(Long id);
 
+    Optional<Pasajero> buscarPorEmail(String email);  // 👈 NUEVO
+
     Pasajero crear(Pasajero pasajero);
 
     Pasajero actualizar(Long id, Pasajero pasajero);

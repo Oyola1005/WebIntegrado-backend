@@ -1,6 +1,7 @@
 package com.backend.app.service;
 
 import com.backend.app.model.Boleto;
+import com.backend.app.model.Pasajero;
 import com.backend.app.model.Viaje;
 import com.backend.app.repository.BoletoRepository;
 import com.backend.app.repository.ViajeRepository;
@@ -36,47 +37,28 @@ public class BoletoServiceImpl implements BoletoService {
         return boletoRepository.findById(id);
     }
 
-    /**
-     * Compra de boleto transaccional:
-     * - Verifica que exista el viaje
-     * - Verifica que exista el pasajero
-     * - Verifica fecha del viaje, asientos y estado
-     * - Crea el boleto
-     * - Descuenta 1 asiento del viaje
-     * Si algo falla, se hace rollback automático.
-     */
     @Override
     @Transactional
     public Boleto comprarBoleto(Long viajeId, Long pasajeroId) {
 
-        // 1) Validar viaje existente
         Viaje viaje = viajeRepository.findById(viajeId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("No existe viaje con id: " + viajeId));
+                .orElseThrow(() -> new IllegalArgumentException("No existe viaje con id: " + viajeId));
 
-        // 2) Validar pasajero existente
         pasajeroService.buscarPorId(pasajeroId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("No existe pasajero con id: " + pasajeroId));
+                .orElseThrow(() -> new IllegalArgumentException("No existe pasajero con id: " + pasajeroId));
 
-        // 3) Validar que el viaje NO haya ocurrido ya
         if (viaje.getFechaSalida().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("No se puede comprar boleto: el viaje ya ocurrió.");
         }
 
-        // 4) Validar estado del viaje
         if (!"PROGRAMADO".equalsIgnoreCase(viaje.getEstado())) {
-            throw new IllegalStateException(
-                    "El viaje no está disponible para compra. Estado actual: " + viaje.getEstado()
-            );
+            throw new IllegalStateException("El viaje no está disponible para compra.");
         }
 
-        // 5) Validar asientos disponibles
         if (viaje.getAsientosDisponibles() <= 0) {
-            throw new IllegalStateException("No hay asientos disponibles para este viaje");
+            throw new IllegalStateException("No hay asientos disponibles.");
         }
 
-        // 6) Crear boleto
         Boleto boleto = new Boleto(
                 null,
                 viajeId,
@@ -86,19 +68,24 @@ public class BoletoServiceImpl implements BoletoService {
                 "PAGADO"
         );
 
-        // 7) Actualizar asientos del viaje
-        int nuevosAsientos = viaje.getAsientosDisponibles() - 1;
-        viaje.setAsientosDisponibles(nuevosAsientos);
-
-        // Opcional: si ya no hay asientos, marcar viaje como COMPLETADO
-        if (nuevosAsientos == 0) {
+        viaje.setAsientosDisponibles(viaje.getAsientosDisponibles() - 1);
+        if (viaje.getAsientosDisponibles() == 0) {
             viaje.setEstado("COMPLETADO");
         }
-
         viajeRepository.save(viaje);
 
-        // 8) Guardar boleto
         return boletoRepository.save(boleto);
+    }
+
+    @Override
+    @Transactional
+    public Boleto comprarBoletoParaUsuarioActual(Long viajeId, String emailUsuario) {
+
+        Pasajero pasajero = pasajeroService.buscarPorEmail(emailUsuario)
+                .orElseThrow(() -> 
+                        new IllegalArgumentException("No existe pasajero asociado al email: " + emailUsuario));
+
+        return comprarBoleto(viajeId, pasajero.getId());
     }
 
     @Override

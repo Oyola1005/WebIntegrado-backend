@@ -21,20 +21,12 @@ public class PasajeroServiceImpl implements PasajeroService {
     private void inicializarDatosEjemplo() {
         if (pasajeroRepository.count() == 0) {
             Pasajero p1 = new Pasajero(
-                    null,
-                    "Juan",
-                    "Pérez",
-                    "12345678",
-                    "juan@example.com",
-                    "987654321"
+                    null, "Juan", "Pérez", "12345678",
+                    "juan@example.com", "987654321"
             );
             Pasajero p2 = new Pasajero(
-                    null,
-                    "María",
-                    "García",
-                    "87654321",
-                    "maria@example.com",
-                    "912345678"
+                    null, "María", "García", "87654321",
+                    "maria@example.com", "912345678"
             );
             pasajeroRepository.save(p1);
             pasajeroRepository.save(p2);
@@ -49,6 +41,11 @@ public class PasajeroServiceImpl implements PasajeroService {
     @Override
     public Optional<Pasajero> buscarPorId(Long id) {
         return pasajeroRepository.findById(id);
+    }
+
+    @Override
+    public Optional<Pasajero> buscarPorEmail(String email) {   // 👈 NUEVO
+        return pasajeroRepository.findByEmail(email);
     }
 
     @Override
