@@ -5,6 +5,7 @@ import com.backend.app.repository.ViajeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -90,9 +91,14 @@ public class ViajeServiceImpl implements ViajeService {
     }
 
     @Override
-    public List<Viaje> buscarPorRuta(String origen, String destino) {
-        // Solo viajes FUTUROS, con asientos, PROGRAMADOS
-        LocalDateTime hoy = LocalDateTime.now();
-        return viajeRepository.buscarDisponiblesPorRuta(origen, destino, hoy);
+    public List<Viaje> buscarPorRuta(String origen, String destino, LocalDate fechaSalidaMin) {
+
+        // Si no viene fecha desde el front, usamos "ahora"
+        LocalDateTime desde = (fechaSalidaMin != null)
+                ? fechaSalidaMin.atStartOfDay()
+                : LocalDateTime.now();
+
+        // Solo viajes FUTUROS desde "desde", con asientos, PROGRAMADOS
+        return viajeRepository.buscarDisponiblesPorRuta(origen, destino, desde);
     }
 }

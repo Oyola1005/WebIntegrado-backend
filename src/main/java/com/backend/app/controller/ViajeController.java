@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -35,15 +36,28 @@ public class ViajeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // GET /api/viajes/busqueda?origen=Lima&destino=Chimbote
-    // Solo usuarios autenticados
+    /**
+     * GET /api/viajes/busqueda?origen=Lima&destino=Chimbote&fechaIda=2025-12-13
+     * - origen y destino son obligatorios
+     * - fechaIda es opcional; si no viene, se usa hoy
+     */
     @GetMapping("/busqueda")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Viaje>> buscarPorRuta(
             @RequestParam String origen,
-            @RequestParam String destino
+            @RequestParam String destino,
+            @RequestParam(name = "fechaIda", required = false) String fechaIdaStr
     ) {
-        return ResponseEntity.ok(viajeService.buscarPorRuta(origen, destino));
+        LocalDate fechaIda = null;
+
+        // El input date del front manda formato ISO: yyyy-MM-dd
+        if (fechaIdaStr != null && !fechaIdaStr.isBlank()) {
+            fechaIda = LocalDate.parse(fechaIdaStr);
+        }
+
+        return ResponseEntity.ok(
+                viajeService.buscarPorRuta(origen, destino, fechaIda)
+        );
     }
 
     // POST /api/viajes - Solo ADMIN puede crear

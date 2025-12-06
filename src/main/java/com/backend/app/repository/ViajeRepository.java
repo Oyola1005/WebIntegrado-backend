@@ -13,7 +13,7 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
     /**
      * Busca viajes disponibles por ruta:
      * - origen y destino (case-insensitive)
-     * - fecha de salida HOY o futura
+     * - fecha de salida >= :desde
      * - con asientos disponibles
      * - estado PROGRAMADO
      */
@@ -21,7 +21,7 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
            SELECT v FROM Viaje v
            WHERE LOWER(v.origen) = LOWER(:origen)
              AND LOWER(v.destino) = LOWER(:destino)
-             AND v.fechaSalida >= :hoy
+             AND v.fechaSalida >= :desde
              AND v.asientosDisponibles > 0
              AND v.estado = 'PROGRAMADO'
            ORDER BY v.fechaSalida ASC
@@ -29,6 +29,6 @@ public interface ViajeRepository extends JpaRepository<Viaje, Long> {
     List<Viaje> buscarDisponiblesPorRuta(
             @Param("origen") String origen,
             @Param("destino") String destino,
-            @Param("hoy") LocalDateTime hoy
+            @Param("desde") LocalDateTime desde
     );
 }
