@@ -9,6 +9,7 @@ import com.backend.app.model.Usuario;
 import com.backend.app.repository.PasajeroRepository;
 import com.backend.app.repository.UsuarioRepository;
 import com.backend.app.security.JwtUtil;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -16,10 +17,10 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -84,9 +85,19 @@ public class AuthController {
 
         System.out.println(">>> Login exitoso, token generado");
 
-        return ResponseEntity.ok(
-                new AuthResponse(token, usuario.getRol().name())
+        // Buscar datos de pasajero para el saludo
+        Optional<Pasajero> pasajeroOpt = pasajeroRepository.findByEmail(emailNormalizado);
+        String nombreMostrado = pasajeroOpt
+                .map(p -> p.getNombres() + " " + p.getApellidos())
+                .orElse(emailNormalizado); // fallback por si no hubiera pasajero
+
+        AuthResponse resp = new AuthResponse(
+                token,
+                usuario.getRol().name(),
+                nombreMostrado
         );
+
+        return ResponseEntity.ok(resp);
     }
 
     // ============================
@@ -118,9 +129,6 @@ public class AuthController {
         nuevoUsuario.setEmail(emailNormalizado);
         nuevoUsuario.setPassword(passwordEncoder.encode(request.getPassword()));
         nuevoUsuario.setRol(Rol.CLIENTE);
-
-        // Si tu entidad tiene estos campos, descoméntalos.
-        // Si no existen, puedes borrarlos sin problema.
         nuevoUsuario.setEnabled(true);
         nuevoUsuario.setFechaCreacion(LocalDateTime.now());
 
@@ -137,7 +145,7 @@ public class AuthController {
         );
         pasajeroRepository.save(pasajero);
 
-        // 5) (Opcional pero bonito) – devolvemos también token para que quede logeado
+        // 5) Generar token y respuesta con nombreMostrado
         var authority = new SimpleGrantedAuthority("ROLE_" + nuevoUsuario.getRol().name());
         User userDetails = new User(
                 nuevoUsuario.getEmail(),
@@ -146,7 +154,13 @@ public class AuthController {
         );
         String token = jwtUtil.generateToken(userDetails);
 
-        AuthResponse resp = new AuthResponse(token, nuevoUsuario.getRol().name());
+        String nombreMostrado = request.getNombres() + " " + request.getApellidos();
+
+        AuthResponse resp = new AuthResponse(
+                token,
+                nuevoUsuario.getRol().name(),
+                nombreMostrado
+        );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
