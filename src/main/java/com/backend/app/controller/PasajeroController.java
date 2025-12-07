@@ -5,6 +5,7 @@ import com.backend.app.service.PasajeroService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,7 +36,20 @@ public class PasajeroController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // ✅ NUEVO: obtener el perfil del pasajero logeado (para autocompletar)
+    // GET /api/pasajeros/perfil
+    @GetMapping("/perfil")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Pasajero> getPerfilActual(Authentication auth) {
+        String emailUsuario = auth.getName(); // viene del JWT
+
+        return pasajeroService.buscarPorEmail(emailUsuario)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     // POST /api/pasajeros - Registro público (NO TOKEN)
+    // (en tu flujo actual casi no se usa, porque registras por /api/auth/register)
     @PostMapping
     public ResponseEntity<Pasajero> crear(@Valid @RequestBody Pasajero pasajero) {
         return ResponseEntity.ok(pasajeroService.crear(pasajero));
