@@ -1,5 +1,6 @@
 package com.backend.app.service;
 
+import com.backend.app.dto.ActualizarPerfilRequest;
 import com.backend.app.model.Pasajero;
 import com.backend.app.repository.PasajeroRepository;
 import org.springframework.stereotype.Service;
@@ -44,7 +45,7 @@ public class PasajeroServiceImpl implements PasajeroService {
     }
 
     @Override
-    public Optional<Pasajero> buscarPorEmail(String email) {   // 👈 NUEVO
+    public Optional<Pasajero> buscarPorEmail(String email) {
         return pasajeroRepository.findByEmail(email);
     }
 
@@ -73,5 +74,21 @@ public class PasajeroServiceImpl implements PasajeroService {
     @Transactional
     public void eliminar(Long id) {
         pasajeroRepository.deleteById(id);
+    }
+
+    // 👇 NUEVO
+    @Override
+    @Transactional
+    public Pasajero actualizarPerfil(String emailUsuario, ActualizarPerfilRequest request) {
+        return pasajeroRepository.findByEmail(emailUsuario)
+                .map(existente -> {
+                    existente.setNombres(request.getNombres());
+                    existente.setApellidos(request.getApellidos());
+                    existente.setTelefono(request.getTelefono());
+                    // NO tocamos dni ni email
+                    return pasajeroRepository.save(existente);
+                })
+                .orElseThrow(() ->
+                        new IllegalArgumentException("No existe pasajero con email: " + emailUsuario));
     }
 }

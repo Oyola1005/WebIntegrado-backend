@@ -1,5 +1,6 @@
 package com.backend.app.controller;
 
+import com.backend.app.dto.ActualizarPerfilRequest;
 import com.backend.app.model.Pasajero;
 import com.backend.app.service.PasajeroService;
 import jakarta.validation.Valid;
@@ -20,42 +21,29 @@ public class PasajeroController {
         this.pasajeroService = pasajeroService;
     }
 
-    // GET /api/pasajeros - Solo usuarios autenticados
+    // =======================
+    // CRUD GENERAL
+    // =======================
+
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Pasajero>> listarTodos() {
         return ResponseEntity.ok(pasajeroService.listarTodos());
     }
 
-    // GET /api/pasajeros/{id} - Solo usuarios autenticados
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Pasajero> obtenerPorId(@PathVariable Long id) {
         return pasajeroService.buscarPorId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // ✅ NUEVO: obtener el perfil del pasajero logeado (para autocompletar)
-    // GET /api/pasajeros/perfil
-    @GetMapping("/perfil")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Pasajero> getPerfilActual(Authentication auth) {
-        String emailUsuario = auth.getName(); // viene del JWT
-
-        return pasajeroService.buscarPorEmail(emailUsuario)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // POST /api/pasajeros - Registro público (NO TOKEN)
-    // (en tu flujo actual casi no se usa, porque registras por /api/auth/register)
     @PostMapping
     public ResponseEntity<Pasajero> crear(@Valid @RequestBody Pasajero pasajero) {
         return ResponseEntity.ok(pasajeroService.crear(pasajero));
     }
 
-    // PUT /api/pasajeros/{id} - Solo ADMIN puede actualizar
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Pasajero> actualizar(@PathVariable Long id,
@@ -67,11 +55,34 @@ public class PasajeroController {
         return ResponseEntity.ok(actualizado);
     }
 
-    // DELETE /api/pasajeros/{id} - Solo ADMIN puede eliminar
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         pasajeroService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // =======================
+    // PERFIL DEL USUARIO LOGUEADO
+    // =======================
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Pasajero> miPerfil(Authentication auth) {
+        String emailUsuario = auth.getName();
+        return pasajeroService.buscarPorEmail(emailUsuario)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Pasajero> actualizarMiPerfil(
+            @Valid @RequestBody ActualizarPerfilRequest datos,
+            Authentication auth
+    ) {
+        String emailUsuario = auth.getName();
+        Pasajero actualizado = pasajeroService.actualizarPerfil(emailUsuario, datos);
+        return ResponseEntity.ok(actualizado);
     }
 }
