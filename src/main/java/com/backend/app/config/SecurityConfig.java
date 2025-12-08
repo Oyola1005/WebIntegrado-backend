@@ -1,3 +1,4 @@
+// src/main/java/com/backend/app/config/SecurityConfig.java
 package com.backend.app.config;
 
 import com.backend.app.security.JwtAuthenticationFilter;
@@ -51,19 +52,15 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-                // 🔹 Primero habilitamos CORS usando la configuración de abajo
+                // CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 🔹 Desactivamos CSRF porque usamos JWT (API stateless)
+                // Sin CSRF (API con JWT)
                 .csrf(csrf -> csrf.disable())
-
-                // 🔹 Sin sesiones de servidor
+                // Stateless
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
                 .authenticationProvider(authenticationProvider())
-
                 .authorizeHttpRequests(auth -> auth
                         // Swagger público
                         .requestMatchers(
@@ -72,46 +69,35 @@ public class SecurityConfig {
                                 "/swagger-ui/**"
                         ).permitAll()
 
-                        // Login/registro públicos
+                        // Auth público
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // Estado del backend público
-                        .requestMatchers("/api/viajes/status").permitAll()
+                        // 🔓 TODOS los viajes públicos (para evitar 403 en el admin)
+                        .requestMatchers("/api/viajes/**").permitAll()
 
-                        // Registro de pasajero SIN token
+                        // Registro de pasajero público
                         .requestMatchers(HttpMethod.POST, "/api/pasajeros").permitAll()
 
-                        // Todo lo demás bajo /api/** requiere token
+                        // Resto de /api/** sí requiere token
                         .requestMatchers("/api/**").authenticated()
 
-                        // El resto de rutas (por ejemplo, estáticos) libres
+                        // Cualquier otra ruta libre
                         .anyRequest().permitAll()
                 )
-
-                // 🔹 Filtro JWT antes del filtro de usuario/contraseña
+                // Filtro JWT
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // 🔹 Configuración CORS para permitir tu frontend Angular
+    // CORS para Angular
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // Origen de tu frontend
         configuration.setAllowedOrigins(List.of("http://localhost:4200"));
-
-        // Métodos permitidos
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-        // Headers permitidos
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
-
-        // Headers expuestos al frontend
         configuration.setExposedHeaders(List.of("Authorization"));
-
-        // Permitir credenciales si las usaras (cookies, etc.)
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
