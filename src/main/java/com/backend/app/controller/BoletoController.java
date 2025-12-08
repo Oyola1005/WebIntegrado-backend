@@ -26,8 +26,7 @@ public class BoletoController {
     // ===== ADMIN =====
 
     @GetMapping
-    @PreAuthorize("hasRole(" +
-            "'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Boleto>> listarTodos() {
         return ResponseEntity.ok(boletoService.listarTodos());
     }
@@ -47,6 +46,15 @@ public class BoletoController {
         return ResponseEntity.noContent().build();
     }
 
+    // ===== NUEVO: ASIENTOS OCUPADOS POR VIAJE =====
+
+    @GetMapping("/ocupados/{viajeId}")
+    @PreAuthorize("hasRole('CLIENTE') or hasRole('ADMIN')")
+    public ResponseEntity<List<Integer>> asientosOcupados(@PathVariable Long viajeId) {
+        List<Integer> ocupados = boletoService.obtenerAsientosOcupadosPorViaje(viajeId);
+        return ResponseEntity.ok(ocupados);
+    }
+
     // ===== CLIENTE: MIS BOLETOS / COMPRAR =====
 
     @GetMapping("/mis-boletos")
@@ -54,7 +62,6 @@ public class BoletoController {
     public ResponseEntity<List<Boleto>> listarMisBoletos(Authentication auth) {
 
         if (auth == null || !auth.isAuthenticated()) {
-            // si no hay token o no se autenticó bien -> 401
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Collections.emptyList());
         }
@@ -66,7 +73,6 @@ public class BoletoController {
             return ResponseEntity.ok(misBoletos);
         } catch (Exception e) {
             e.printStackTrace();
-            // si hay error del lado de servicio devolvemos lista vacía (pero sin romper)
             return ResponseEntity.ok(Collections.emptyList());
         }
     }
@@ -85,7 +91,8 @@ public class BoletoController {
         try {
             Boleto boleto = boletoService.comprarBoletoParaUsuarioActual(
                     request.getViajeId(),
-                    emailUsuario
+                    emailUsuario,
+                    request.getNumeroAsiento()
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(boleto);
         } catch (IllegalArgumentException | IllegalStateException e) {

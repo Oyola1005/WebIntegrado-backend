@@ -22,6 +22,11 @@ public class Boleto {
     @Column(name = "pasajero_id", nullable = false)
     private Long pasajeroId;
 
+    @Min(1)
+    @NotNull
+    @Column(name = "numero_asiento", nullable = false)
+    private Integer numeroAsiento;
+
     @NotNull
     @Column(name = "fecha_compra", nullable = false)
     private LocalDateTime fechaCompra;
@@ -37,17 +42,21 @@ public class Boleto {
     public Boleto() {
     }
 
-    public Boleto(Long id, Long viajeId, Long pasajeroId,
-                  LocalDateTime fechaCompra, double montoTotal, String estado) {
+    public Boleto(Long id,
+                  Long viajeId,
+                  Long pasajeroId,
+                  Integer numeroAsiento,
+                  LocalDateTime fechaCompra,
+                  double montoTotal,
+                  String estado) {
         this.id = id;
         this.viajeId = viajeId;
         this.pasajeroId = pasajeroId;
+        this.numeroAsiento = numeroAsiento;
         this.fechaCompra = fechaCompra;
         this.montoTotal = montoTotal;
         this.estado = estado;
     }
-
-    // Getters y setters
 
     public Long getId() {
         return id;
@@ -71,6 +80,14 @@ public class Boleto {
 
     public void setPasajeroId(Long pasajeroId) {
         this.pasajeroId = pasajeroId;
+    }
+
+    public Integer getNumeroAsiento() {
+        return numeroAsiento;
+    }
+
+    public void setNumeroAsiento(Integer numeroAsiento) {
+        this.numeroAsiento = numeroAsiento;
     }
 
     public LocalDateTime getFechaCompra() {

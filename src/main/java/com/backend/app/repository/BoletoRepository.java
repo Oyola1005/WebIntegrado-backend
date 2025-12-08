@@ -13,6 +13,9 @@ public interface BoletoRepository extends JpaRepository<Boleto, Long> {
     // Boletos por viaje
     List<Boleto> findByViajeId(Long viajeId);
 
-    // 👇 NUEVO: Boletos por pasajero ordenados del más reciente al más antiguo
+    // Boletos por pasajero ordenados del más reciente al más antiguo
     List<Boleto> findByPasajeroIdOrderByFechaCompraDesc(Long pasajeroId);
+
+    // NUEVO: para verificar si un asiento ya está tomado
+    boolean existsByViajeIdAndNumeroAsiento(Long viajeId, Integer numeroAsiento);
 }
