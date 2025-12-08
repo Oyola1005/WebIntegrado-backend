@@ -15,7 +15,7 @@ public interface BoletoService {
 
     Boleto comprarBoletoParaUsuarioActual(Long viajeId, String emailUsuario);
 
-    // 👇 NUEVO: listar boletos del usuario (cliente) que está logueado
+    // Boletos del usuario (cliente) logueado
     List<Boleto> listarBoletosDeUsuarioActual(String emailUsuario);
 
     void eliminar(Long id);

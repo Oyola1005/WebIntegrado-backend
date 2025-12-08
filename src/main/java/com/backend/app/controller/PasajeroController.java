@@ -4,6 +4,7 @@ import com.backend.app.dto.ActualizarPerfilRequest;
 import com.backend.app.model.Pasajero;
 import com.backend.app.service.PasajeroService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -21,9 +22,7 @@ public class PasajeroController {
         this.pasajeroService = pasajeroService;
     }
 
-    // =======================
-    // CRUD GENERAL
-    // =======================
+    // ===== CRUD GENERAL (ADMIN) =====
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -62,17 +61,20 @@ public class PasajeroController {
         return ResponseEntity.noContent().build();
     }
 
-    // =======================
-    // PERFIL DEL USUARIO LOGUEADO
-    // =======================
+    // ===== PERFIL DEL USUARIO LOGUEADO (CLIENTE / CUALQUIER AUTENTICADO) =====
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Pasajero> miPerfil(Authentication auth) {
+
+        if (auth == null || !auth.isAuthenticated()) {
+            // por si algo raro pasa con el filtro
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         String emailUsuario = auth.getName();
-        return pasajeroService.buscarPorEmail(emailUsuario)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Pasajero perfil = pasajeroService.obtenerOPrepararPerfil(emailUsuario);
+        return ResponseEntity.ok(perfil);
     }
 
     @PutMapping("/me")
@@ -81,6 +83,10 @@ public class PasajeroController {
             @Valid @RequestBody ActualizarPerfilRequest datos,
             Authentication auth
     ) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         String emailUsuario = auth.getName();
         Pasajero actualizado = pasajeroService.actualizarPerfil(emailUsuario, datos);
         return ResponseEntity.ok(actualizado);

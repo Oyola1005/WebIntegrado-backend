@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -22,8 +23,11 @@ public class BoletoController {
         this.boletoService = boletoService;
     }
 
+    // ===== ADMIN =====
+
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole(" +
+            "'ADMIN')")
     public ResponseEntity<List<Boleto>> listarTodos() {
         return ResponseEntity.ok(boletoService.listarTodos());
     }
@@ -36,20 +40,34 @@ public class BoletoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 👇 NUEVO: boletos del usuario logueado (CLIENTE)
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        boletoService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ===== CLIENTE: MIS BOLETOS / COMPRAR =====
+
     @GetMapping("/mis-boletos")
     @PreAuthorize("hasRole('CLIENTE')")
-    public ResponseEntity<?> listarMisBoletos(Authentication auth) {
+    public ResponseEntity<List<Boleto>> listarMisBoletos(Authentication auth) {
+
+        if (auth == null || !auth.isAuthenticated()) {
+            // si no hay token o no se autenticó bien -> 401
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Collections.emptyList());
+        }
+
+        String emailUsuario = auth.getName();
+
         try {
-            String emailUsuario = auth.getName();  // viene del JWT
             List<Boleto> misBoletos = boletoService.listarBoletosDeUsuarioActual(emailUsuario);
             return ResponseEntity.ok(misBoletos);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error interno: " + e.getMessage());
+            // si hay error del lado de servicio devolvemos lista vacía (pero sin romper)
+            return ResponseEntity.ok(Collections.emptyList());
         }
     }
 
@@ -57,29 +75,25 @@ public class BoletoController {
     @PreAuthorize("hasRole('CLIENTE')")
     public ResponseEntity<?> comprar(@Valid @RequestBody CompraBoletoRequest request,
                                      Authentication auth) {
-        try {
-            String emailUsuario = auth.getName();  // 👈 viene del JWT
 
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String emailUsuario = auth.getName();
+
+        try {
             Boleto boleto = boletoService.comprarBoletoParaUsuarioActual(
                     request.getViajeId(),
                     emailUsuario
             );
-
             return ResponseEntity.status(HttpStatus.CREATED).body(boleto);
-
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error interno: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("No se pudo completar la compra.");
         }
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        boletoService.eliminar(id);
-        return ResponseEntity.noContent().build();
     }
 }

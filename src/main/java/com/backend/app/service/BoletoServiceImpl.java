@@ -81,21 +81,14 @@ public class BoletoServiceImpl implements BoletoService {
     @Transactional
     public Boleto comprarBoletoParaUsuarioActual(Long viajeId, String emailUsuario) {
 
-        Pasajero pasajero = pasajeroService.buscarPorEmail(emailUsuario)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("No existe pasajero asociado al email: " + emailUsuario));
-
+        Pasajero pasajero = pasajeroService.obtenerOPrepararPerfil(emailUsuario);
         return comprarBoleto(viajeId, pasajero.getId());
     }
 
-    // 👇 NUEVO: listar boletos del pasajero según el email del usuario logueado
+    // Lista de boletos del pasajero asociado al email
     @Override
     public List<Boleto> listarBoletosDeUsuarioActual(String emailUsuario) {
-
-        Pasajero pasajero = pasajeroService.buscarPorEmail(emailUsuario)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("No existe pasajero asociado al email: " + emailUsuario));
-
+        Pasajero pasajero = pasajeroService.obtenerOPrepararPerfil(emailUsuario);
         return boletoRepository.findByPasajeroIdOrderByFechaCompraDesc(pasajero.getId());
     }
 

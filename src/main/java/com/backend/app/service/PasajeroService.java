@@ -20,6 +20,9 @@ public interface PasajeroService {
 
     void eliminar(Long id);
 
-    // 👇 NUEVO: actualizar perfil del usuario logueado
+    // Actualizar perfil usando el email del usuario logueado
     Pasajero actualizarPerfil(String emailUsuario, ActualizarPerfilRequest request);
+
+    // 🔹 Garantiza que SIEMPRE haya un pasajero para ese email
+    Pasajero obtenerOPrepararPerfil(String emailUsuario);
 }
