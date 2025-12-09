@@ -46,11 +46,11 @@ public class BoletoController {
         return ResponseEntity.noContent().build();
     }
 
-    // ===== NUEVO: ASIENTOS OCUPADOS POR VIAJE =====
+    // ===== ASIENTOS OCUPADOS POR VIAJE =====
 
     @GetMapping("/ocupados/{viajeId}")
-    @PreAuthorize("hasRole('CLIENTE') or hasRole('ADMIN')")
-    public ResponseEntity<List<Integer>> asientosOcupados(@PathVariable Long viajeId) {
+    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
+    public ResponseEntity<List<Integer>> getAsientosOcupados(@PathVariable Long viajeId) {
         List<Integer> ocupados = boletoService.obtenerAsientosOcupadosPorViaje(viajeId);
         return ResponseEntity.ok(ocupados);
     }
@@ -91,8 +91,8 @@ public class BoletoController {
         try {
             Boleto boleto = boletoService.comprarBoletoParaUsuarioActual(
                     request.getViajeId(),
-                    emailUsuario,
-                    request.getNumeroAsiento()
+                    request.getNumeroAsiento(),
+                    emailUsuario
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(boleto);
         } catch (IllegalArgumentException | IllegalStateException e) {

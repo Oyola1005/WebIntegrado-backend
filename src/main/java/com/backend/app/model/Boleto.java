@@ -22,7 +22,7 @@ public class Boleto {
     @Column(name = "pasajero_id", nullable = false)
     private Long pasajeroId;
 
-    @Min(1)
+    // 👇 NUEVO: número de asiento
     @NotNull
     @Column(name = "numero_asiento", nullable = false)
     private Integer numeroAsiento;
@@ -42,6 +42,7 @@ public class Boleto {
     public Boleto() {
     }
 
+    // 👇 Constructor que usamos en BoletoServiceImpl
     public Boleto(Long id,
                   Long viajeId,
                   Long pasajeroId,
@@ -57,6 +58,8 @@ public class Boleto {
         this.montoTotal = montoTotal;
         this.estado = estado;
     }
+
+    // Getters y setters
 
     public Long getId() {
         return id;

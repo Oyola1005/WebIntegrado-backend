@@ -42,10 +42,6 @@ public class BoletoServiceImpl implements BoletoService {
     @Transactional
     public Boleto comprarBoleto(Long viajeId, Long pasajeroId, Integer numeroAsiento) {
 
-        if (numeroAsiento == null || numeroAsiento <= 0) {
-            throw new IllegalArgumentException("El número de asiento es inválido.");
-        }
-
         Viaje viaje = viajeRepository.findById(viajeId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe viaje con id: " + viajeId));
 
@@ -64,7 +60,11 @@ public class BoletoServiceImpl implements BoletoService {
             throw new IllegalStateException("No hay asientos disponibles.");
         }
 
-        // 👇 Verificar que el asiento no esté ya ocupado
+        if (numeroAsiento == null || numeroAsiento <= 0) {
+            throw new IllegalArgumentException("Número de asiento inválido.");
+        }
+
+        // 👇 validar que el asiento no esté ocupado
         boolean yaOcupado = boletoRepository
                 .existsByViajeIdAndNumeroAsiento(viajeId, numeroAsiento);
         if (yaOcupado) {
@@ -92,7 +92,10 @@ public class BoletoServiceImpl implements BoletoService {
 
     @Override
     @Transactional
-    public Boleto comprarBoletoParaUsuarioActual(Long viajeId, String emailUsuario, Integer numeroAsiento) {
+    public Boleto comprarBoletoParaUsuarioActual(Long viajeId,
+                                                 Integer numeroAsiento,
+                                                 String emailUsuario) {
+
         Pasajero pasajero = pasajeroService.obtenerOPrepararPerfil(emailUsuario);
         return comprarBoleto(viajeId, pasajero.getId(), numeroAsiento);
     }

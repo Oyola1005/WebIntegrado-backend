@@ -10,7 +10,8 @@ public class CompraBoletoRequest {
     @NotNull(message = "El número de asiento es obligatorio")
     private Integer numeroAsiento;
 
-    public CompraBoletoRequest() {}
+    public CompraBoletoRequest() {
+    }
 
     public CompraBoletoRequest(Long viajeId, Integer numeroAsiento) {
         this.viajeId = viajeId;

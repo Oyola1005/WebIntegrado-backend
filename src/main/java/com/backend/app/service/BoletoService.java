@@ -11,14 +11,15 @@ public interface BoletoService {
 
     Optional<Boleto> buscarPorId(Long id);
 
+    // compra indicando asiento
     Boleto comprarBoleto(Long viajeId, Long pasajeroId, Integer numeroAsiento);
 
-    Boleto comprarBoletoParaUsuarioActual(Long viajeId, String emailUsuario, Integer numeroAsiento);
+    Boleto comprarBoletoParaUsuarioActual(Long viajeId, Integer numeroAsiento, String emailUsuario);
 
     // Boletos del usuario (cliente) logueado
     List<Boleto> listarBoletosDeUsuarioActual(String emailUsuario);
 
-    // NUEVO: números de asiento ocupados para un viaje
+    // asientos ocupados por viaje
     List<Integer> obtenerAsientosOcupadosPorViaje(Long viajeId);
 
     void eliminar(Long id);
